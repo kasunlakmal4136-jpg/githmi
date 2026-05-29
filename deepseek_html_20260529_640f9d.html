@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Githmee Gimhani | Minister of Media | Global Admin Photo Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <style>
+        /* same styles as before (compact) */
+        * { margin:0; padding:0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: #090d16; color: #f3f4f6; }
+        .glow-bg, .glow-bg-2 { position: fixed; width: 500px; height: 500px; border-radius: 50%; filter: blur(100px); z-index: -1; }
+        .glow-bg { background: #3b82f6; top: -150px; right: -150px; opacity:0.1; }
+        .glow-bg-2 { background: #8b5cf6; bottom: -150px; left: -150px; opacity:0.1; }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; background: rgba(9,13,22,0.8); backdrop-filter: blur(20px); position: sticky; top:0; z-index:100; border-bottom:1px solid rgba(255,255,255,0.05);}
+        .logo { font-weight:800; font-size:1.3rem; background:linear-gradient(135deg,#fff,#9ca3af); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .logo span { color:#3b82f6; -webkit-text-fill-color:#3b82f6; }
+        .nav-links { display:flex; gap:30px; list-style:none; }
+        .nav-links a { color:#9ca3af; text-decoration:none; font-weight:500; }
+        .admin-btn { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:8px 20px; border-radius:40px; cursor:pointer; font-weight:600; }
+        .admin-btn:hover { background:#3b82f6; color:white; }
+        .hero-container { max-width:1300px; margin:40px auto 80px; padding:0 4%; display:grid; grid-template-columns:1.2fr 1fr; gap:50px; align-items:center; }
+        .hero-text h1 { font-size:3.5rem; font-weight:800; background:linear-gradient(135deg,#fff,#a5b4fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:20px; }
+        .hero-text p { color:#9ca3af; line-height:1.7; margin-bottom:30px; }
+        .btn { padding:14px 32px; border-radius:100px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:10px; cursor:pointer; transition:0.2s; }
+        .btn-primary { background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:white; }
+        .btn-secondary { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:white; }
+        .image-frame { background:#0f172a; border-radius:28px; overflow:hidden; position:relative; box-shadow:0 20px 35px -10px black; }
+        .image-frame img { width:100%; height:100%; object-fit:cover; display:block; }
+        .upload-btn { position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); border:none; color:white; padding:6px 14px; border-radius:40px; font-size:0.7rem; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .hero-image .image-frame { height:450px; max-width:380px; margin:auto; }
+        .stats-section { padding:40px 0; background:rgba(255,255,255,0.01); }
+        .stats-grid { max-width:1100px; margin:auto; display:grid; grid-template-columns:repeat(3,1fr); text-align:center; gap:30px; }
+        .stat-item h2 { font-size:2.8rem; font-weight:800; color:#3b82f6; }
+        .appointment-panel { max-width:1100px; margin:0 auto 80px; padding:30px; background:rgba(255,255,255,0.02); border-radius:32px; }
+        .appointment-grid { display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+        .form-group { margin-bottom:20px; }
+        input, textarea { width:100%; padding:12px 16px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:20px; color:white; }
+        .checklist { margin:20px 0; }
+        .check-item { display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.03); padding:12px 18px; border-radius:60px; margin-bottom:10px; }
+        .call-btn { background:#4b5563; color:#9ca3af; border:none; padding:12px 28px; border-radius:60px; font-weight:700; cursor:not-allowed; }
+        .call-btn.enabled { background:linear-gradient(135deg,#10b981,#059669); color:white; cursor:pointer; }
+        .services-section, .gallery-section { max-width:1300px; margin:0 auto 100px; padding:0 4%; }
+        .section-header { text-align:center; margin-bottom:40px; }
+        .services-grid, .gallery-grid { display:grid; gap:30px; }
+        .services-grid { grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+        .gallery-grid { grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+        .service-img, .gallery-img { height:200px; position:relative; }
+        .service-content { padding:20px; }
+        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; z-index:200; opacity:0; pointer-events:none; transition:0.2s; }
+        .modal.active { opacity:1; pointer-events:auto; }
+        .modal-content { background:#0f172a; border-radius:32px; padding:30px; width:320px; text-align:center; }
+        footer { text-align:center; padding:30px; color:#4b5563; border-top:1px solid rgba(255,255,255,0.03); }
+        @media (max-width:800px) { .hero-container { grid-template-columns:1fr; text-align:center; } .appointment-grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="glow-bg"></div>
+<div class="glow-bg-2"></div>
+
+<nav>
+    <div class="logo">GITHMEE<span>GIMHANI</span></div>
+    <ul class="nav-links"><li><a href="#home">Home</a></li><li><a href="#appointment">Appointment</a></li><li><a href="#services">Services</a></li><li><a href="#gallery">Gallery</a></li></ul>
+    <button class="admin-btn" id="adminLoginBtn"><i class="fas fa-lock"></i> Admin Login</button>
+</nav>
+
+<header class="hero-container" id="home">
+    <div class="hero-text">
+        <h1>Mass Media & Communication Minister<br>ශ්‍රී ලංකා</h1>
+        <p>Hon. Githmee Gimhani leads national media reforms, empowers grassroots journalism, and expands digital access across all 25 districts.</p>
+        <a href="#appointment" class="btn btn-primary">Schedule Appointment <i class="fas fa-calendar-check"></i></a>
+    </div>
+    <div class="hero-image">
+        <div class="image-frame">
+            <img id="ministerPhoto" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 450'%3E%3Crect width='400' height='450' fill='%231e293b'/%3E%3Ctext x='50%25' y='45%25' text-anchor='middle' fill='%2394a3b8' font-size='18'%3EMinister's Photo%3C/text%3E%3C/svg%3E">
+            <button class="upload-btn admin-only" id="uploadMinisterBtn" style="display:none"><i class="fas fa-camera"></i> Upload</button>
+            <input type="file" id="ministerFile" accept="image/*" style="display:none">
+        </div>
+    </div>
+</header>
+
+<section class="appointment-panel" id="appointment">
+    <h2 style="margin-bottom:20px"><i class="fas fa-phone-alt"></i> Pre-Call Protocol</h2>
+    <div class="appointment-grid">
+        <div><h3>Schedule Appointment</h3>
+            <div class="form-group"><label>Date</label><input type="date" id="aptDate"></div>
+            <div class="form-group"><label>Time</label><input type="time" id="aptTime"></div>
+            <div class="form-group"><label>Purpose</label><textarea id="aptNote" rows="2"></textarea></div>
+            <button id="saveAptBtn" class="btn btn-primary">Save Appointment</button>
+            <button id="clearAptBtn" class="btn btn-secondary">Clear</button>
+            <div id="aptStatus" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.3); border-radius:20px;"><strong>Status:</strong> <span id="aptBadge">Not Set</span><br><span id="aptDetails">No appointment</span></div>
+        </div>
+        <div><h3>Mandatory Checklist</h3>
+            <div class="checklist"><div class="check-item"><input type="checkbox" id="chk1"><label>📁 Review case files</label></div><div class="check-item"><input type="checkbox" id="chk2"><label>🧠 Prepare talking points</label></div><div class="check-item"><input type="checkbox" id="chk3"><label>🎧 Test environment & device</label></div><div class="check-item"><input type="checkbox" id="chk4"><label>🤝 Confirm alignment & punctuality</label></div></div>
+            <div id="progressText">0/4 completed</div>
+            <button id="callBtn" class="call-btn" disabled><i class="fas fa-phone-volume"></i> Call Minister</button>
+        </div>
+    </div>
+</section>
+
+<section class="services-section" id="services"><div class="section-header"><h2>Social Services – Sri Lanka</h2></div><div id="servicesGrid" class="services-grid"></div></section>
+<section class="gallery-section" id="gallery"><div class="section-header"><h2>Ministry Gallery</h2></div><div id="galleryGrid" class="gallery-grid"></div></section>
+<footer>© 2026 Ministry of Mass Media & Communication | Powered by Firebase Global Storage</footer>
+
+<div id="adminModal" class="modal"><div class="modal-content"><h3>Admin Login</h3><input type="password" id="adminPass" placeholder="Password" style="width:100%; margin:15px 0"><button id="loginSubmit" class="btn btn-primary">Login</button><button id="closeModal" class="btn btn-secondary" style="margin-top:12px">Cancel</button></div></div>
+
+<script>
+    // ==================== FIREBASE CONFIG (REPLACE WITH YOUR OWN) ====================
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Global variables
+    let isAdmin = false;
+    const ADMIN_PASS = "admin123"; // change as needed
+
+    // Collection names
+    const COLLECTION = "siteImages";
+    const IMAGE_KEYS = ["minister", "service0", "service1", "service2", "service3", "gallery0", "gallery1", "gallery2", "gallery3"];
+
+    // Load all image URLs from Firestore and display
+    async function loadAllImages() {
+        const docRef = db.collection(COLLECTION).doc("images");
+        const doc = await docRef.get();
+        let data = doc.exists ? doc.data() : {};
+        // minister
+        let ministerUrl = data.minister || null;
+        if(ministerUrl) document.getElementById("ministerPhoto").src = ministerUrl;
+        else setDefaultMinister();
+        // services & gallery
+        const servicesData = [
+            { title: "Rural Media Literacy", icon: "fas fa-chalkboard-user", desc: "Free Sinhala & Tamil workshops in 15+ rural districts." },
+            { title: "Community Radio Revival", icon: "fas fa-radio", desc: "Supporting 30+ local radio stations in Monaragala, Batticaloa, Jaffna." },
+            { title: "Young Reporters – North & East", icon: "fas fa-microphone-alt", desc: "Annual media fellowship for aspiring journalists." },
+            { title: "Digital Access for All", icon: "fas fa-wifi", desc: "Low-cost internet devices & digital literacy for rural families." }
+        ];
+        const galleryTitles = ["Media Reform Summit – Colombo", "Community Radio Training – Kandy", "Young Journalists Workshop – Jaffna", "Digital Access Program – Badulla"];
+        let servicesHtml = "";
+        for(let i=0; i<4; i++) {
+            let imgUrl = data[`service${i}`] || null;
+            let imgSrc = imgUrl ? imgUrl : `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%231e293b'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2394a3b8' font-size='16'%3E${servicesData[i].title}%3C/text%3E%3C/svg%3E`;
+            servicesHtml += `
+                <div class="service-card">
+                    <div class="service-img image-frame">
+                        <img id="serviceImg${i}" src="${imgSrc}">
+                        <button class="upload-btn admin-only" data-type="service" data-index="${i}" style="display:none"><i class="fas fa-camera"></i> Upload</button>
+                        <input type="file" class="serviceFile" data-index="${i}" accept="image/*" style="display:none">
+                    </div>
+                    <div class="service-content">
+                        <h3><i class="${servicesData[i].icon}"></i> ${servicesData[i].title}</h3>
+                        <p>${servicesData[i].desc}</p>
+                        <a href="#" class="btn-service">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            `;
+        }
+        document.getElementById("servicesGrid").innerHTML = servicesHtml;
+        let galleryHtml = "";
+        for(let i=0; i<4; i++) {
+            let imgUrl = data[`gallery${i}`] || null;
+            let imgSrc = imgUrl ? imgUrl : `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%231e293b'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2394a3b8' font-size='16'%3E${galleryTitles[i]}%3C/text%3E%3C/svg%3E`;
+            galleryHtml += `
+                <div class="gallery-item">
+                    <div class="gallery-img image-frame">
+                        <img id="galleryImg${i}" src="${imgSrc}">
+                        <button class="upload-btn admin-only" data-type="gallery" data-index="${i}" style="display:none"><i class="fas fa-camera"></i> Upload</button>
+                        <input type="file" class="galleryFile" data-index="${i}" accept="image/*" style="display:none">
+                    </div>
+                    <div style="padding:12px; text-align:center;">${galleryTitles[i]}</div>
+                </div>
+            `;
+        }
+        document.getElementById("galleryGrid").innerHTML = galleryHtml;
+        if(isAdmin) attachAdminUploads();
+    }
+
+    function setDefaultMinister() {
+        document.getElementById("ministerPhoto").src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 450'%3E%3Crect width='400' height='450' fill='%231e293b'/%3E%3Ctext x='50%25' y='45%25' text-anchor='middle' fill='%2394a3b8' font-size='18'%3EMinister's Photo%3C/text%3E%3C/svg%3E";
+    }
+
+    // Upload image to Firebase Storage and save URL to Firestore
+    async function uploadImage(file, key) {
+        const storageRef = storage.ref().child(`minister_images/${key}_${Date.now()}`);
+        const uploadTask = await storageRef.put(file);
+        const downloadURL = await uploadTask.ref.getDownloadURL();
+        // save to Firestore
+        const docRef = db.collection(COLLECTION).doc("images");
+        const doc = await docRef.get();
+        let updates = doc.exists ? doc.data() : {};
+        updates[key] = downloadURL;
+        await docRef.set(updates, { merge: true });
+        return downloadURL;
+    }
+
+    async function handleUpload(file, key, imgElementId) {
+        if(!file) return;
+        const url = await uploadImage(file, key);
+        document.getElementById(imgElementId).src = url;
+        alert(`${key} uploaded successfully!`);
+    }
+
+    function attachAdminUploads() {
+        // minister upload
+        document.getElementById("uploadMinisterBtn").style.display = "flex";
+        document.getElementById("uploadMinisterBtn").onclick = () => document.getElementById("ministerFile").click();
+        document.getElementById("ministerFile").onchange = (e) => {
+            if(e.target.files[0]) handleUpload(e.target.files[0], "minister", "ministerPhoto");
+        };
+        // service uploads
+        document.querySelectorAll("[data-type='service']").forEach(btn => {
+            btn.onclick = () => {
+                let idx = btn.getAttribute("data-index");
+                let fileInput = document.querySelector(`.serviceFile[data-index='${idx}']`);
+                fileInput.click();
+                fileInput.onchange = (e) => {
+                    if(e.target.files[0]) handleUpload(e.target.files[0], `service${idx}`, `serviceImg${idx}`);
+                };
+            };
+        });
+        // gallery uploads
+        document.querySelectorAll("[data-type='gallery']").forEach(btn => {
+            btn.onclick = () => {
+                let idx = btn.getAttribute("data-index");
+                let fileInput = document.querySelector(`.galleryFile[data-index='${idx}']`);
+                fileInput.click();
+                fileInput.onchange = (e) => {
+                    if(e.target.files[0]) handleUpload(e.target.files[0], `gallery${idx}`, `galleryImg${idx}`);
+                };
+            };
+        });
+    }
+
+    // Admin login modal
+    const modal = document.getElementById('adminModal');
+    document.getElementById('adminLoginBtn').onclick = () => modal.classList.add('active');
+    document.getElementById('closeModal').onclick = () => modal.classList.remove('active');
+    document.getElementById('loginSubmit').onclick = () => {
+        const pwd = document.getElementById('adminPass').value;
+        if(pwd === ADMIN_PASS) {
+            isAdmin = true;
+            modal.classList.remove('active');
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = "flex");
+            attachAdminUploads();
+            alert("Admin logged in. You can now upload images that all visitors will see.");
+        } else { alert("Wrong password"); }
+    };
+
+    // Appointment & call logic (unchanged)
+    let appointmentSaved = false, aptData = null;
+    const dateInput = document.getElementById('aptDate'), timeInput = document.getElementById('aptTime'), noteInput = document.getElementById('aptNote');
+    const saveApt = document.getElementById('saveAptBtn'), clearApt = document.getElementById('clearAptBtn');
+    const aptBadge = document.getElementById('aptBadge'), aptDetails = document.getElementById('aptDetails');
+    const callBtn = document.getElementById('callBtn');
+    const chk1=document.getElementById('chk1'),chk2=document.getElementById('chk2'),chk3=document.getElementById('chk3'),chk4=document.getElementById('chk4');
+    const progressSpan = document.getElementById('progressText');
+    function isValidFuture(dateStr,timeStr){ let dt=new Date(`${dateStr}T${timeStr}:00`); return dt && dt>=new Date(); }
+    function updateAptUI(){
+        if(appointmentSaved && aptData){ aptBadge.innerText="Scheduled ✓"; aptDetails.innerHTML=`📅 ${aptData.date} at ${aptData.time}<br>📌 ${aptData.note||"General"}`; }
+        else { aptBadge.innerText="Not Set"; aptDetails.innerHTML="No active appointment."; }
+        updateCallEnable();
+    }
+    function updateCallEnable(){
+        let done = chk1.checked && chk2.checked && chk3.checked && chk4.checked;
+        let progress = [chk1,chk2,chk3,chk4].filter(c=>c.checked).length;
+        progressSpan.innerText=`${progress}/4 completed`;
+        if(appointmentSaved && done){ callBtn.disabled=false; callBtn.classList.add("enabled"); }
+        else { callBtn.disabled=true; callBtn.classList.remove("enabled"); }
+    }
+    saveApt.addEventListener('click',()=>{
+        let date=dateInput.value, time=timeInput.value, note=noteInput.value;
+        if(!date||!time){ alert("Select date & time"); return; }
+        if(!isValidFuture(date,time)){ alert("Must be future"); return; }
+        aptData={date,time,note:note||"Consultation"}; appointmentSaved=true; updateAptUI();
+    });
+    clearApt.addEventListener('click',()=>{ appointmentSaved=false; aptData=null; updateAptUI(); });
+    [chk1,chk2,chk3,chk4].forEach(c=>c.addEventListener('change',updateCallEnable));
+    callBtn.addEventListener('click',()=>{
+        if(!appointmentSaved || !(chk1.checked&&chk2.checked&&chk3.checked&&chk4.checked)) return;
+        alert(`📞 Connecting to Minister Githmee Gimhani\nAppointment: ${aptData.date} ${aptData.time}\nAll protocols verified.`);
+    });
+    // set default future date
+    let tomorrow=new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    dateInput.value=tomorrow.toISOString().slice(0,10);
+    timeInput.value="10:30";
+    // load all images from Firebase
+    loadAllImages();
+</script>
+</body>
+</html>
